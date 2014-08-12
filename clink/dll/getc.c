@@ -203,13 +203,24 @@ loop:
         key_sc = key->wVirtualScanCode;
         key_flags = key->dwControlKeyState;
 
+#if defined(DEBUG_GETC) && defined(_DEBUG)
+        {
+            int i;
+            puts("");
+            for (i = 0; i < sizeof(*key); ++i)
+            {
+                printf("%02x ", ((unsigned char*)key)[i]);
+            }
+        }
+#endif
+
         if (key->bKeyDown == FALSE)
         {
             // Some times conhost can send through ALT codes, with the resulting
             // Unicode code point in the Alt key-up event.
             if (key_vk == VK_MENU && key_char)
             {
-                return key_char;
+                goto end;
             }
 
             goto loop;
@@ -226,17 +237,6 @@ loop:
         {
             *alt = !!(key_flags & LEFT_ALT_PRESSED);
         }
-
-#if defined(DEBUG_GETC) && defined(_DEBUG)
-        {
-            int i;
-            puts("");
-            for (i = 0; i < sizeof(*key); ++i)
-            {
-                printf("%02x ", ((unsigned char*)key)[i]);
-            }
-        }
-#endif
     }
 
     // No Unicode character? Then some post-processing is required to make the
@@ -244,11 +244,28 @@ loop:
     // that which Readline expects.
     if (key_char == 0)
     {
+        int i;
+
+        // The numpad keys such as PgUp, End, etc. don't come through with the
+        // ENHANCED_KEY flag set so we'll infer it here.
+        static const int enhanced_vks[] = {
+            VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_HOME, VK_END,
+            VK_INSERT, VK_DELETE, VK_PRIOR, VK_NEXT,
+        };
+
+        for (i = 0; i < sizeof_array(enhanced_vks); ++i)
+        {
+            if (key_vk == enhanced_vks[i])
+            {
+                key_flags |= ENHANCED_KEY;
+                break;
+            }
+        }
+
         // Differentiate enhanced keys depending on modifier key state. MSVC's
         // runtime does something similar. Slightly non-standard.
         if (key_flags & ENHANCED_KEY)
         {
-            int i;
             static const int mod_map[][4] =
             {
                 //Nrml  Shft  Ctrl  CtSh
@@ -305,6 +322,7 @@ loop:
         key_char = key_vk;
     }
 
+end:
 #if defined(DEBUG_GETC) && defined(_DEBUG)
     printf("\n%08x '%c'", key_char, key_char);
 #endif

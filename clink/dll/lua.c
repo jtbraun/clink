@@ -223,7 +223,7 @@ static int find_files_impl(lua_State* state, int dirs_only)
 
     // Check arguments.
     i = lua_gettop(state);
-    if (i == 0 && lua_isnil(state, 1))
+    if (i == 0 || lua_isnil(state, 1))
     {
         return 0;
     }
@@ -288,7 +288,14 @@ static int find_dirs(lua_State* state)
 //------------------------------------------------------------------------------
 static int matches_are_files(lua_State* state)
 {
-    rl_filename_completion_desired = 1;
+    int i = 1;
+
+    if (lua_gettop(state) > 0)
+    {
+        i = lua_tointeger(state, 1);
+    }
+
+    rl_filename_completion_desired = i;
     return 0;
 }
 
