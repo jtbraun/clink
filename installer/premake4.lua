@@ -99,7 +99,7 @@ newaction {
         local src_dir_name = path.translate(path.getabsolute("."), "\\")
 
         -- Build the code.
-        local vs_ver = _OPTIONS["clink_vs_ver"] or "vs2010"
+        local vs_ver = _OPTIONS["clink_vs_ver"] or "vs2013"
         local premake = _PREMAKE_COMMAND or "premake4"
         exec(premake.." --clink_ver="..clink_ver.." "..vs_ver)
         exec("msbuild /m /v:q /p:configuration=release /p:platform=win32 .build/"..vs_ver.."/clink.sln")
@@ -136,6 +136,7 @@ newaction {
         exec("copy /b "..dest.."\\clink.lua /b + "..dest.."\\arguments.lua /b "..dest.."\\clink._lua /b")
         exec("del /q "..dest.."\\clink.lua")
         exec("del /q "..dest.."\\arguments.lua")
+        exec("del /q "..dest.."\\debugger.lua")
 
         local lua_lump = io.open(dest.."\\clink._lua", "a")
         for _, i in ipairs(os.matchfiles(dest.."/*.lua")) do

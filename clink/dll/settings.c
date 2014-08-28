@@ -89,12 +89,31 @@ static const setting_decl_t g_settings_decl[] = {
         "0"
     },
     {
-        "persist_history",
-        "Persistent command history",
-        "Enable or disable the saving and loading of command history "
-        "between sessions.",
+        "history_file_lines",
+        "Lines of history saved to disk",
+        "When set to a positive integer this is the number of lines of history "
+        "that will persist when Clink saves the command history to disk. Use 0 "
+        "for infinite lines and <0 to disable history persistence.",
+        SETTING_TYPE_INT,
+        0, "10000"
+    },
+    {
+        "history_ignore_space",
+        "Skip adding lines prefixed with whitespace.",
+        "Ignore lines that begin with whitespace when adding lines in to "
+        "the history.",
         SETTING_TYPE_BOOL,
-        0, "1"
+        0, "0"
+    },
+    {
+        "history_dupe_mode",
+        "Controls how duplicates entries are handled.",
+        "If a line is a duplicate of an existing history entry Clink will "
+        "erase the duplicate when this is set 2. A value of 1 will not add "
+        "duplicates to the history and a value of 0 will always add lines.",
+        SETTING_TYPE_ENUM,
+        "Always add\0Ignore\0Erase",
+        "2"
     },
     {
         "use_altgr_substitute",
@@ -104,6 +123,16 @@ static const setting_decl_t g_settings_decl[] = {
         "Readline's bindings.",
         SETTING_TYPE_BOOL,
         0, "1"
+    },
+    {
+        "strip_crlf_on_paste",
+        "Strips CR and LF chars when pasting.",
+        "Setting this to a value >0 will make Clink strip CR and LF characters "
+        "from text pasted into the current line. Set this to 1 to strip all "
+        "newline characters and 2 to replace them with a space.",
+        SETTING_TYPE_ENUM,
+        "Paste unchanged\0Strip\0As space",
+        "2"
     },
 };
 
