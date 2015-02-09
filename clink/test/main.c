@@ -25,10 +25,12 @@
 
 //------------------------------------------------------------------------------
 void                prepare_env_for_inputrc();
+void                clear_history();
 lua_State*          initialise_lua();
 int                 call_readline_w(const wchar_t*, wchar_t*, unsigned);
 char**              match_display_filter(char**, int);
 extern void         (*g_alt_fwrite_hook)(wchar_t*);
+void                set_config_dir_override(const char* dir);
 
 static const char*  g_getc_automatic    = NULL;
 static char*        g_caught_matches    = NULL;
@@ -82,12 +84,25 @@ static void stdout_catch(wchar_t* buffer)
 }
 
 //------------------------------------------------------------------------------
+static int clear_history_lua(lua_State* lua)
+{
+    clear_history();
+    return 0;
+}
+
+//------------------------------------------------------------------------------
 static int call_readline_lua(lua_State* lua)
 {
+    HANDLE handle;
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
     wchar_t output[1024];
     char utf8[sizeof_array(output)];
     char* read;
     int i;
+
+    // Save the console's cursor position incase readline moves it.
+    handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    GetConsoleScreenBufferInfo(handle, &csbi);
 
     // Check we've got at least one string argument.
     if (lua_gettop(lua) == 0 || !lua_isstring(lua, 1))
@@ -123,6 +138,7 @@ static int call_readline_lua(lua_State* lua)
     free(g_caught_matches);
     g_caught_matches = NULL;
 
+    SetConsoleCursorPosition(handle, csbi.dwCursorPosition);
     return 2;
 }
 
@@ -257,7 +273,13 @@ int main(int argc, char** argv)
     // Without arguments show help.
     if (scripts_path == NULL || argc <= 1)
     {
-        puts("Usage: --scripts=<scripts_path>");
+        extern const char* g_clink_header;
+
+        puts(g_clink_header);
+        puts("Usage: --scripts=<scripts_path> [--test=X[.Y]] [--verbose]");
+        puts("");
+        puts("  scripts : path to the Lua test scripts");
+        puts("     test : run group or individual test (e.g. --test=5.4)");
         return 0;
     }
 
@@ -267,6 +289,8 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    set_config_dir_override("c:\\");
+
     prepare_env_for_inputrc();
     rl_readline_name = "cmd.exe";
 
@@ -275,10 +299,11 @@ int main(int argc, char** argv)
     {
         struct luaL_Reg native_methods[] = {
             { "call_readline", call_readline_lua },
-            { "get_cwd", get_cwd },
-            { "ch_dir", ch_dir },
-            { "mk_dir", mk_dir },
-            { "rm_dir", rm_dir },
+            { "ch_dir",        ch_dir },
+            { "clear_history", clear_history_lua },
+            { "get_cwd",       get_cwd },
+            { "mk_dir",        mk_dir },
+            { "rm_dir",        rm_dir },
             { NULL, NULL }
         };
 

@@ -23,7 +23,8 @@
 #include "shared/util.h"
 
 //------------------------------------------------------------------------------
-int get_clink_setting_int(const char*);
+DWORD   g_knownBufferSize = 0;
+int     get_clink_setting_int(const char*);
 
 //------------------------------------------------------------------------------
 static void simulate_sigwinch(COORD expected_cursor_pos)
@@ -167,6 +168,7 @@ loop:
     // Read a key or use what was carried across from a previous call.
     if (carry)
     {
+        key_flags = ENHANCED_KEY;
         key_char = carry;
         carry = 0;
     }
@@ -174,24 +176,25 @@ loop:
     {
         HANDLE handle_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
         CONSOLE_SCREEN_BUFFER_INFO csbi;
-        DWORD count;
+        DWORD i;
         INPUT_RECORD record;
         const KEY_EVENT_RECORD* key;
         int altgr_sub;
 
         GetConsoleScreenBufferInfo(handle_stdout, &csbi);
 
-        // Fresh read from the console.
-        SetConsoleMode(handle, ENABLE_WINDOW_INPUT);
-        ReadConsoleInputW(handle, &record, 1, &count);
-
-        // Simulate SIGWINCH signals.
-        if (record.EventType == WINDOW_BUFFER_SIZE_EVENT)
+        // Check for a new buffer size for simulated SIGWINCH signals.
+        i = (csbi.dwSize.X << 16) | csbi.dwSize.Y;
+        if (!g_knownBufferSize || g_knownBufferSize != i)
         {
             simulate_sigwinch(csbi.dwCursorPosition);
+            g_knownBufferSize = i;
             goto loop;
         }
 
+        // Fresh read from the console.
+        SetConsoleMode(handle, 0);
+        ReadConsoleInputW(handle, &record, 1, &i);
         if (record.EventType != KEY_EVENT)
         {
             goto loop;
@@ -205,11 +208,12 @@ loop:
 
 #if defined(DEBUG_GETC) && defined(_DEBUG)
         {
+            static int id = 0;
             int i;
-            puts("");
-            for (i = 0; i < sizeof(*key); ++i)
+            printf("\n%03d: %s ", id++, key->bKeyDown ? "+" : "-");
+            for (i = 2; i < sizeof(*key) / sizeof(short); ++i)
             {
-                printf("%02x ", ((unsigned char*)key)[i]);
+                printf("%04x ", ((unsigned short*)key)[i]);
             }
         }
 #endif
@@ -321,6 +325,10 @@ loop:
 
         key_char = key_vk;
     }
+    else if (!(key_flags & ENHANCED_KEY) && key_char > 0x7f)
+    {
+        key_char |= 0x8000000;
+    }
 
 end:
 #if defined(DEBUG_GETC) && defined(_DEBUG)
@@ -334,6 +342,7 @@ end:
 //------------------------------------------------------------------------------
 int getc_impl(FILE* stream)
 {
+    int printable;
     int alt;
     int i;
     while (1)
@@ -343,6 +352,10 @@ int getc_impl(FILE* stream)
 
         alt = 0;
         i = GETWCH_IMPL(&alt);
+
+        // MSB is set if value represents a printable character.
+        printable = (i & 0x80000000);
+        i &= ~printable;
 
         // Treat esc like cmd.exe does - clear the line.
         if (i == 0x1b)
@@ -359,7 +372,7 @@ int getc_impl(FILE* stream)
         }
 
         // Mask off top bits, they're used to track ALT key state.
-        if (i < 0x80 || i == 0xe0)
+        if (i < 0x80 || (i == 0xe0 && !printable))
         {
             break;
         }
@@ -367,14 +380,7 @@ int getc_impl(FILE* stream)
         // Convert to utf-8 and insert directly into rl's line buffer.
         wc[0] = (wchar_t)i;
         wc[1] = L'\0';
-
-        WideCharToMultiByte(
-            CP_UTF8, 0,
-            wc, -1,
-            utf8, sizeof(utf8),
-            NULL,
-            NULL
-        );
+        WideCharToMultiByte(CP_UTF8, 0, wc, -1, utf8, sizeof(utf8), NULL, NULL);
 
         rl_insert_text(utf8);
         rl_redisplay();

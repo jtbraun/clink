@@ -199,14 +199,8 @@ void clear_screen()
     GetConsoleScreenBufferInfo(handle, &csbi);
     window = csbi.srWindow;
 
-    // How much do we need to move?
-    dy = csbi.dwCursorPosition.Y - window.Top;
-    if (dy == 0)
-    {
-        return;
-    }
-
     // Is there not enough buffer space to put the cursor at the top?
+    dy = csbi.dwCursorPosition.Y - window.Top;
     window_rows = window.Bottom - window.Top;
     if (window_rows > csbi.dwSize.Y - csbi.dwCursorPosition.Y)
     {
@@ -228,8 +222,10 @@ void clear_screen()
         fill.Attributes = csbi.wAttributes;
 
         ScrollConsoleScreenBuffer(handle, &window, NULL, dest_origin, &fill);
+
+        window.Top = csbi.dwCursorPosition.Y - dy;
     }
-    else
+    else if (dy != 0)
     {
         // Move the visible window.
         SMALL_RECT delta_window = { 0, dy, 0, dy };
@@ -310,7 +306,7 @@ static void visible_bell()
 {
     cursor_style(!g_enhanced_cursor);
     move_cursor(0, 0);
-    Sleep(40);
+    Sleep(20);
     cursor_style(g_enhanced_cursor);
 }
 

@@ -110,6 +110,29 @@ local function print_result(name, passed)
 end
     
 --------------------------------------------------------------------------------
+local function call_readline_outer(input, flattened)
+    if flattened == nil then
+        flattened = {}
+    end
+
+    if type(input) == "table" then
+        local output
+        local matches
+
+        for _, i in ipairs(input) do
+            output, matches = call_readline_outer(i, flattened)
+        end
+
+        return output, matches, flattened
+    end
+
+    table.insert(flattened, input)
+
+    local output, matches = call_readline(input)
+    return output, matches, flattened
+end
+
+--------------------------------------------------------------------------------
 local function test_runner(name, input, expected_out, expected_matches)
     test_id = test_id + 1
 
@@ -131,8 +154,10 @@ local function test_runner(name, input, expected_out, expected_matches)
         end
     end
 
+    clear_history()
+
     local passed = true
-    local output, matches = call_readline(input)
+    local output, matches, input = call_readline_outer(input)
 
     -- Check Readline's output.
     if expected_out and expected_out ~= output then
@@ -168,7 +193,9 @@ local function test_runner(name, input, expected_out, expected_matches)
     if not passed or verbose ~= 0 then
         print(colour(5).."\n    -- Results --")
         print(colour(5).."          Cwd: "..get_cwd())
-        print(colour(5).."        Input: "..input:gsub("\t", "<TAB>").."_")
+        for _, i in ipairs(input) do
+            print(colour(5).."        Input: "..i:gsub("\t", "<TAB>").."_")
+        end
         print(colour(5).."       Output: "..output.."_")
         for _, i in ipairs(matches) do
             print(colour(5).."      Matches: "..i)
@@ -276,6 +303,7 @@ function clink.test.run()
     run_test("test_env")
     run_test("test_args")
     run_test("test_merge")
+    run_test("test_history")
 
     ch_dir(scripts_path)
     rm_dir(test_fs_path)

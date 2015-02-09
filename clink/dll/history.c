@@ -42,6 +42,12 @@ void load_history()
     char buffer[512];
 
     get_history_file_name(buffer, sizeof(buffer));
+
+    // Clear existing history.
+    clear_history();
+    g_new_history_count = 0;
+
+    // Read from disk.
     read_history(buffer);
     using_history();
 }
@@ -49,9 +55,11 @@ void load_history()
 //------------------------------------------------------------------------------
 void save_history()
 {
+    int always_write;
     int max_history;
     char buffer[512];
 
+    always_write = get_clink_setting_int("history_io");
     get_history_file_name(buffer, sizeof(buffer));
 
     // Get max history size.
@@ -64,12 +72,17 @@ void save_history()
     }
 
     // Write new history to the file, and truncate to our maximum.
-    if (append_history(g_new_history_count, buffer) != 0)
+    if (always_write || append_history(g_new_history_count, buffer) != 0)
     {
         write_history(buffer);
     }
 
-    history_truncate_file(buffer, max_history);
+    if (max_history != INT_MAX)
+    {
+        history_truncate_file(buffer, max_history);
+    }
+
+    g_new_history_count = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -128,7 +141,8 @@ void add_to_history(const char* line)
         {
             if (dupe_mode > 1)
             {
-                remove_history(where);
+                HIST_ENTRY* entry = remove_history(where);
+                free_history_entry(entry);
             }
             else
             {
@@ -148,11 +162,10 @@ int expand_from_history(const char* text, char** expanded)
 {
     int result;
 
-    expanded = NULL;
     result = history_expand((char*)text, expanded);
     if (result < 0)
     {
-        free(expanded);
+        free(*expanded);
     }
 
     return result;

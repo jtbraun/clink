@@ -29,7 +29,7 @@ local is_parser
 local is_sub_parser
 local new_sub_parser
 local parser_go_impl
---local merge_parsers
+local merge_parsers
 
 local parser_meta_table     = {}
 local sub_parser_meta_table = {}
@@ -146,16 +146,12 @@ local function parser_set_flags(parser, ...)
 end
 
 --------------------------------------------------------------------------------
-local function parser_flatten_argument(parser, index, part)
+local function parser_flatten_argument(parser, index, func_thunk)
     -- Sanity check the 'index' param to make sure it's valid.
     if type(index) == "number" then
         if index <= 0 or index > #parser.arguments then
             return parser.use_file_matching
         end
-    end
-
-    if part == nil then
-        part = ""
     end
 
     -- index == nil is a special case that returns the parser's flags
@@ -174,8 +170,13 @@ local function parser_flatten_argument(parser, index, part)
         else
             local t = type(i)
             if t == "function" then
-                local results = i(part)
-                if type(results) == "table" then
+                local results = func_thunk(i)
+                local t = type(results)
+                if not results then
+                    return parser.use_file_matching
+                elseif t == "boolean" then
+                    return (results and parser.use_file_matching)
+                elseif t == "table" then
                     for _, j in ipairs(results) do
                         table.insert(opts, j)
                     end
@@ -238,7 +239,7 @@ local function parser_go_args(parser, state)
                 end
             end
 
-            -- Check so see if the part has an exact match in the agrument. Note
+            -- Check so see if the part has an exact match in the argument. Note
             -- that only string-type options are considered.
             if type(arg_opt) == "string" then
                 exact = exact or arg_opt == part
@@ -271,7 +272,13 @@ local function parser_go_args(parser, state)
         end
     end
 
-    return parser:flatten_argument(arg_index, part)
+    -- Now we've an index into the parser's arguments that matches the line
+    -- state. Flatten it.
+    local func_thunk = function(func)
+        return func(part)
+    end
+
+    return parser:flatten_argument(arg_index, func_thunk)
 end
 
 --------------------------------------------------------------------------------
@@ -441,7 +448,7 @@ end
 
 --------------------------------------------------------------------------------
 local function parser_loop(parser, loop_point)
-    if loop_point == nil or type(loop_point) ~= "number" then
+    if loop_point == nil or type(loop_point) ~= "number" or loop_point < 1 then
         loop_point = 1
     end
 

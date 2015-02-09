@@ -30,14 +30,14 @@ static settings_t*  g_settings      = NULL;
 static const setting_decl_t g_settings_decl[] = {
     {
         "ctrld_exits",
-        "Ctrl-D exits",
+        "Pressing Ctrl-D exits session",
         "Ctrl-D exits cmd.exe when it is pressed on an empty line.",
         SETTING_TYPE_BOOL,
         0, "1"
     },
     {
         "esc_clears_line",
-        "Esc clears line",
+        "Toggle if pressing Esc clears line",
         "Clink clears the current line when Esc is pressed (unless Readline's "
         "Vi mode is enabled).",
         SETTING_TYPE_BOOL,
@@ -73,7 +73,7 @@ static const setting_decl_t g_settings_decl[] = {
     },
     {
         "prompt_colour",
-        "Prompt colour",
+        "Colour of the prompt",
         "Surrounds the prompt in ANSI escape codes to set the prompt's colour. "
         "Disabled when the value is less than 0.",
         SETTING_TYPE_INT,
@@ -99,7 +99,7 @@ static const setting_decl_t g_settings_decl[] = {
     },
     {
         "history_ignore_space",
-        "Skip adding lines prefixed with whitespace.",
+        "Skip adding lines prefixed with whitespace",
         "Ignore lines that begin with whitespace when adding lines in to "
         "the history.",
         SETTING_TYPE_BOOL,
@@ -107,13 +107,22 @@ static const setting_decl_t g_settings_decl[] = {
     },
     {
         "history_dupe_mode",
-        "Controls how duplicates entries are handled.",
+        "Controls how duplicate entries are handled",
         "If a line is a duplicate of an existing history entry Clink will "
         "erase the duplicate when this is set 2. A value of 1 will not add "
-        "duplicates to the history and a value of 0 will always add lines.",
+        "duplicates to the history and a value of 0 will always add lines. "
+        "Note that history is not deduplicated when reading/writing to disk.",
         SETTING_TYPE_ENUM,
-        "Always add\0Ignore\0Erase",
+        "Always add\0Ignore\0Erase previous",
         "2"
+    },
+    {
+        "history_io",
+        "Read/write history file each line edited",
+        "When non-zero the history will be read from disk before editing a "
+        "new line and written to disk afterwards.",
+        SETTING_TYPE_BOOL,
+        0, "0"
     },
     {
         "use_altgr_substitute",
@@ -126,13 +135,23 @@ static const setting_decl_t g_settings_decl[] = {
     },
     {
         "strip_crlf_on_paste",
-        "Strips CR and LF chars when pasting.",
+        "Strips CR and LF chars on paste",
         "Setting this to a value >0 will make Clink strip CR and LF characters "
         "from text pasted into the current line. Set this to 1 to strip all "
         "newline characters and 2 to replace them with a space.",
         SETTING_TYPE_ENUM,
         "Paste unchanged\0Strip\0As space",
         "2"
+    },
+    {
+        "ansi_code_support",
+        "Enables basic ANSI escape code support",
+        "When printing the prompt, Clink has basic built-in support for SGR "
+        "ANSI escape codes to control the text colours. This is automatically "
+        "disabled if a third party tool is detected that also provides this "
+        "facility. It can also be disabled by setting this to 0.",
+        SETTING_TYPE_BOOL,
+        0, "1"
     },
 };
 

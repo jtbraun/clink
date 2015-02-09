@@ -50,12 +50,14 @@ set_parser:disable_file_matching()
 set_parser:set_flags("--help")
 set_parser:set_arguments(
     {
+        "ansi_code_support",
         "ctrld_exits",
         "esc_clears_line",
         "exec_match_style",
         "history_dupe_mode",
         "history_file_lines",
         "history_ignore_space",
+        "history_io",
         "match_colour",
         "prompt_colour",
         "space_prefix_match_files",
