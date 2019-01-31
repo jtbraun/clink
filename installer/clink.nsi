@@ -109,13 +109,11 @@ Section "!Application files" app_files_id
     ;
     CreateDirectory $INSTDIR
     SetOutPath $INSTDIR
-    File ${CLINK_BUILD}\clink_dll_x*.dll
-    File ${CLINK_BUILD}\clink.lua
+    File ${CLINK_BUILD}\clink_x*.dll
     File ${CLINK_BUILD}\CHANGES
     File ${CLINK_BUILD}\LICENSE
     File ${CLINK_BUILD}\clink_x*.exe
     File ${CLINK_BUILD}\clink.bat
-    File ${CLINK_BUILD}\clink_inputrc_base
     File ${CLINK_BUILD}\clink.html
 
     ; Create a start-menu shortcut
@@ -158,7 +156,8 @@ Section "Autorun when cmd.exe starts"
     SetShellVarContext all
 
     StrCpy $0 "~\clink"
-    ExecShell "open" "$INSTDIR\clink_x86.exe" 'autorun --install -- --profile "$0"' SW_HIDE
+    ExecShell "open" "$INSTDIR\clink_x86.exe" 'autorun --allusers uninstall' SW_HIDE
+    ExecShell "open" "$INSTDIR\clink_x86.exe" 'autorun install --profile "$0"' SW_HIDE
 SectionEnd
 
 ;-------------------------------------------------------------------------------
@@ -176,7 +175,8 @@ Section "!un.Application files"
     SectionIn RO
     SetShellVarContext all
 
-    ExecShell "open" "$INSTDIR\clink_x86.exe" "autorun --uninstall" SW_HIDE
+    ExecShell "open" "$INSTDIR\clink_x86.exe" "autorun --allusers uninstall" SW_HIDE
+    ExecShell "open" "$INSTDIR\clink_x86.exe" "autorun uninstall" SW_HIDE
     Sleep 600
 
     ; Delete the instaltion directory and root directory if it's empty.

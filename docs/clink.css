@@ -1,8 +1,111 @@
 body {
-    width: 600px;
+    padding-top: 3em;
+    width: 640px;
+    margin: 0 auto;
 }
 
-h3, h2 {
+h3 {
     width: 100%;
     border-bottom: 1px black solid;
+}
+
+h3 { font-size: 1.21em; }
+h4 { font-size: 1.14em; }
+h5 { font-size: 1.07em; }
+h6 { font-size: 1.00em; }
+
+.section {
+    margin-top: 2em;
+    margin-bottom: 4em;
+}
+
+#header {
+    float: right;
+    text-align: right;
+}
+
+#header #title {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 0.4em;
+}
+
+#content {
+    clear: both;
+}
+
+#content p {
+    text-align: justify;
+}
+
+#content table {
+    margin: 0 auto;
+    width: 90%;
+}
+
+#content pre, #api .show {
+    padding: 0.2em;
+    background-color: #eee;
+}
+
+#content td, #content th {
+    vertical-align: top;
+    padding: 0.2em;
+}
+
+#content th {
+    background-color: #eee;
+}
+
+#content tr:nth-child(odd) {
+    background-color: #f8f8f8;
+}
+
+#content tr:nth-child(even) {
+    background-color: #fff;
+}
+
+#content hr {
+    width: 66%;
+}
+
+#content #api .show {
+    white-space: pre;
+    font-family: monospace;
+}
+
+#content #api .group {
+    margin-bottom: 1em;
+}
+
+#content #api .function {
+}
+
+#content #api .body {
+    margin-left: 1em;
+}
+
+#content #api .header .name {
+    font-weight: bold;
+    float: left;
+    width: 40%;
+}
+
+#content #api .header .signature {
+    text-align: right;
+}
+
+#content #api .group_name {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+#content #api .function {
+    margin-left: 2em;
+    margin-bottom: 1.0em;
+}
+
+#content #api .show {
+    white-space: pre;
+    font-family: monospace;
 }
